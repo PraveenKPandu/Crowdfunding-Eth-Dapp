@@ -8,6 +8,12 @@ contract CrowdFunding {
 
     enum State { Ongoing, Failed, Succeeded, PaidOut }
 
+    event CampaignFinished(
+        address addr,
+        uint totalCollected,
+        bool succeeded
+    );
+
     string public name;
     uint public targetAmount;
     uint public deadline;
@@ -62,9 +68,21 @@ contract CrowdFunding {
         uint contributed = amounts[msg.sender];
         amounts[msg.sender] = 0;
 
-        if (!beneficiary.send(contributed)) {
+        if (!msg.sender.send(contributed)) {
             amounts[msg.sender] = contributed;
         }
+    }
+
+    function finishCrowdFunding() public inState(State.Ongoing) {
+        require(!beforeDeadline(), "Cannot finish campaign before a deadline");
+
+        if (!collected) {
+            state = State.Failed;
+        } else {
+            state = State.Succeeded;
+        }
+
+        emit CampaignFinished(address(this), totalCollected, collected);
     }
 
     function beforeDeadline() public view returns(bool) {
@@ -75,5 +93,16 @@ contract CrowdFunding {
         return block.timestamp;
     }
 
+    function getTotalCollected() public view returns(uint) {
+        return totalCollected;
+    }
+
+    function inProgress() public view returns (bool) {
+        return state == State.Ongoing || state == State.Succeeded;
+    }
+
+    function isSuccessful() public view returns (bool) {
+        return state == State.PaidOut;
+    }
 
 }

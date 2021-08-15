@@ -1,5 +1,5 @@
 let CrowdFunding = artifacts.require('./TestCrowdFunding')
-const BigNumber = require('BigNumber.js')
+const BigNumber = require('bignumber.js')
 
 
 contract('CrowdFunding', function(accounts) {
@@ -18,9 +18,39 @@ contract('CrowdFunding', function(accounts) {
         contract = await CrowdFunding.new('Funding', 1, 5, beneficiary, {from: contractOwner, gas: 2000000})
     })
 
+    it('crowdfunding succeeded', async function() {
+        await contract.contribute({value: ONE_ETH, from: contractOwner});
+        await contract.setCurrentTime(601);
+        await contract.finishCrowdFunding();
+
+        let state = await contract.state.call();
+        expect(state.valueOf().toNumber()).to.equal(SUCCEEDED_STATE);
+    });
+
+    it('crowdfunding failed', async function() {
+        await contract.setCurrentTime(601);
+        await contract.finishCrowdFunding();
+
+        let state = await contract.state.call();
+        expect(state.valueOf().toNumber()).to.equal(FAILED_STATE);
+    });
+
     it('contract is initialized', async function() {
-        let contractName = await contract.name.call()
+        let contractName = await contract.contractName.call()
         expect(contractName).to.equal('Funding');
+    
+        let targetAmount = await contract.targetAmount.call()
+        expect(ONE_ETH.isEqualTo(targetAmount)).to.equal(true);
+
+        let fundingDeadline = await contract.deadline.call()
+        expect(fundingDeadline.toNumber()).to.equal(600);
+
+        let actualBeneficiary = await contract.beneficiary.call()
+        expect(actualBeneficiary).to.equal(beneficiary);
+
+        let state = await contract.state.call()
+        expect(state.valueOf().toNumber()).to.equal(ONGOING_STATE);
+
     })
 
     it('funds are contributed', async function() {
@@ -28,13 +58,22 @@ contract('CrowdFunding', function(accounts) {
 
         let contributed = await contract.amounts.call(contractOwner);
         expect(ONE_ETH.isEqualTo(contributed)).to.equal(true);
+
+        let totalCollected = await contract.totalCollected.call();
+        expect(ONE_ETH.isEqualTo(totalCollected)).to.equal(true);
     })
 
     it('Deadline passed. Cannot contribute', async function() {
-        await contract.contribute({value: ONE_ETH, from: contractOwner});
-
-        let contributed = await contract.amounts.call(contractOwner);
-        expect(ONE_ETH.isEqualTo(contributed)).to.equal(true);
+        try {
+            await contract.setCurrentTime(601);
+            await contract.sendTransaction({
+                value: ONE_ETH,
+                from: contractOwner
+            });
+            expect.fail();
+        } catch (error) {
+            expect(error.message).to.equal(ERROR_MSG);
+        }
     })
 
     it('Paidout collected money', async function() {
@@ -61,5 +100,17 @@ contract('CrowdFunding', function(accounts) {
         await contract.withdraw({from: contractOwner});
         let amount = await contract.amounts.call(contractOwner);
         expect(amount.toNumber()).to.equal(0);
+    });
+
+    it('event is emitted', async function() {
+        await contract.setCurrentTime(601);
+        const transaction = await contract.finishCrowdFunding();
+
+        const events = transaction.logs
+        expect(events.length).to.equal(1);
+
+        const event = events[0]
+        expect(event.args.totalCollected.toNumber()).to.equal(0);
+        expect(event.args.succeeded).to.equal(false);
     });
 });
