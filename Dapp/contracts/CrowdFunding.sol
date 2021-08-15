@@ -2,10 +2,10 @@
 pragma solidity >=0.4.22 <0.9.0;
 
 contract CrowdFunding {
-    enum Status { Ongoing, Failed, Succeeded, PaidOut }
+    enum State { Ongoing, Failed, Succeeded, PaidOut }
 
 
-    string public projectName;
+    string public name;
     uint public targetAmount;
     uint public deadline;
     address payable public beneficiary;
@@ -13,6 +13,7 @@ contract CrowdFunding {
     uint public totalCollected;
     mapping(address => uint) public amounts;
     bool public collected; 
+    State public state;
 
 
     modifier inState(State expectedState) {
