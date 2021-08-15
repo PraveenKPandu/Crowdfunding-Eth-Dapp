@@ -31,7 +31,7 @@ contract CrowdFunding {
     {
         name = contractName;
         targetAmount = Utils.etherToWei(targetAmountEth);
-        fundingDeadline = currentTime() + Utils.minutesToSeconds(durationInMin);
+        fundingDeadline = currentTime() + Utils.minsToSecs(durationInMin);
         beneficiary = beneficiaryAddress;
         owner = msg.sender;
         state = State.Ongoing;
