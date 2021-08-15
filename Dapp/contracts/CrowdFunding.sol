@@ -11,6 +11,9 @@ contract CrowdFunding {
     address payable public beneficiary;
     address public owner;
     uint public totalCollected;
+    mapping(address => uint) public amounts;
+    bool public collected; 
+
 
     modifier inState(State expectedState) {
         require(state == expectedState, "Invalid State");
@@ -35,15 +38,29 @@ contract CrowdFunding {
 
 
     function contribute() public payable inState(State.Ongoing){
+        require(beforeDeadline(), "Deadline passed. Cannot contribute");
+        amounts[msg.sender] += msg.value;
+        totalCollected += msg.value;
 
+        if (totalCollected >= targetAmount) {
+            collected = true;
+        }
     }
 
     function collect() public inState(State.Succeeded) {
-
+        if (beneficiary.send(totalCollected)) {
+            state = State.PaidOut;
+        } else {
+            state = State.Failed;
+        }
     }
 
     function withdraw() public inState(State.Failed) {
+        require (amounts[msg.sender] > 0, "Nothing was Contributed");
+        uint contributed = amounts[msg.sender];
+        amounts[msg.sender] = 0;
 
     }
 
-    
+
+}
