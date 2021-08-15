@@ -14,7 +14,7 @@ contract CrowdFunding {
         bool succeeded
     );
 
-    string public name;
+    string public accountName;
     uint public targetAmount;
     uint public deadline;
     address payable public beneficiary;
@@ -36,7 +36,7 @@ contract CrowdFunding {
         address payable beneficiaryAddress
     ) public
     {
-        name = contractName;
+        accountName = contractName;
         targetAmount = Utils.etherToWei(targetAmountEth);
         deadline = currentTime() + Utils.minsToSecs(durationInMin);
         beneficiary = beneficiaryAddress;
@@ -67,10 +67,12 @@ contract CrowdFunding {
         require (amounts[msg.sender] > 0, "Nothing was Contributed");
         uint contributed = amounts[msg.sender];
         amounts[msg.sender] = 0;
+        address sender = msg.sender;
 
-        if (!msg.sender.send(contributed)) {
+        if (!payable address.send(contributed)){
             amounts[msg.sender] = contributed;
         }
+
     }
 
     function finishCrowdFunding() public inState(State.Ongoing) {

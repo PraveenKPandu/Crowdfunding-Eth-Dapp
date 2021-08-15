@@ -36,7 +36,7 @@ contract('CrowdFunding', function(accounts) {
     });
 
     it('contract is initialized', async function() {
-        let contractName = await contract.contractName.call()
+        let contractName = await contract.accountName.call()
         expect(contractName).to.equal('Funding');
     
         let targetAmount = await contract.targetAmount.call()
