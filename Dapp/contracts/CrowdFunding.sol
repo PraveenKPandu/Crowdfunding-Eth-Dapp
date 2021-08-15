@@ -62,5 +62,13 @@ contract CrowdFunding {
 
     }
 
+    function beforeDeadline() public view returns(bool) {
+        return currentTime() < deadlines;
+    }
+
+    function currentTime() internal view returns(uint) {
+        return now;
+    }
+
 
 }
