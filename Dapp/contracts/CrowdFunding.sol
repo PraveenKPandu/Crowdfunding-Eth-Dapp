@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.22 <0.9.0;
 
-contract CrowdFunding {
-    enum State { Ongoing, Failed, Succeeded, PaidOut }
+import "./Utils.sol"; 
 
+contract CrowdFunding {
+    using Utils for *;
+
+    enum State { Ongoing, Failed, Succeeded, PaidOut }
 
     string public name;
     uint public targetAmount;
@@ -15,7 +18,6 @@ contract CrowdFunding {
     bool public collected; 
     State public state;
 
-
     modifier inState(State expectedState) {
         require(state == expectedState, "Invalid State");
         _;
@@ -26,12 +28,11 @@ contract CrowdFunding {
         uint targetAmountEth,
         uint durationInMin,
         address payable beneficiaryAddress
-    )
-        public
+    ) public
     {
         name = contractName;
         targetAmount = Utils.etherToWei(targetAmountEth);
-        fundingDeadline = currentTime() + Utils.minsToSecs(durationInMin);
+        deadline = currentTime() + Utils.minsToSecs(durationInMin);
         beneficiary = beneficiaryAddress;
         owner = msg.sender;
         state = State.Ongoing;
@@ -61,14 +62,17 @@ contract CrowdFunding {
         uint contributed = amounts[msg.sender];
         amounts[msg.sender] = 0;
 
+        if (!beneficiary.send(contributed)) {
+            amounts[msg.sender] = contributed;
+        }
     }
 
     function beforeDeadline() public view returns(bool) {
-        return currentTime() < deadlines;
+        return currentTime() < deadline;
     }
 
     function currentTime() internal view returns(uint) {
-        return now;
+        return block.timestamp;
     }
 
 
