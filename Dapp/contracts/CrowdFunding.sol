@@ -45,7 +45,7 @@ contract CrowdFunding {
     }
 
 
-    function contribute() public payable inState(State.Ongoing){
+    function contribute() payable public inState(State.Ongoing){
         require(beforeDeadline(), "Deadline passed. Cannot contribute");
         amounts[msg.sender] += msg.value;
         totalCollected += msg.value;
@@ -67,12 +67,12 @@ contract CrowdFunding {
         require (amounts[msg.sender] > 0, "Nothing was Contributed");
         uint contributed = amounts[msg.sender];
         amounts[msg.sender] = 0;
-        address sender = msg.sender;
 
-        if (!payable address.send(contributed)){
+        address payable addr1 = address(uint160(owner));
+
+        if (!addr1.send(contributed)) {
             amounts[msg.sender] = contributed;
         }
-
     }
 
     function finishCrowdFunding() public inState(State.Ongoing) {
